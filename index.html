@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Configurações de WebApp Tela Cheia para iOS / iPadOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mídia Indoor">
+  
   <title>Dashboard Mídia Indoor - Notícias & Clima</title>
   <style>
     * {
@@ -54,7 +60,6 @@
       font-size: 0.8rem;
       color: #94a3b8;
     }
-    /* Mais Espaçamento entre os dias */
     .weather-forecast {
       display: flex;
       gap: 2rem; 
@@ -93,7 +98,7 @@
       color: #94a3b8;
     }
 
-    /* Container Principal das Notícias */
+    /* Container Principal */
     .container {
       display: flex;
       flex: 1;
@@ -128,7 +133,6 @@
     .nav-btn.prev { left: 15px; }
     .nav-btn.next { right: 15px; }
     
-    /* Imagem sem esticar (contain + proporções originais preservadas) */
     .image-container {
       flex: 1;
       position: relative;
@@ -142,7 +146,7 @@
     .image-container img {
       max-width: 100%;
       max-height: 100%;
-      object-fit: contain; /* Mantém tamanho e resolução originais sem distorcer */
+      object-fit: contain;
       opacity: 0;
       transition: opacity 0.6s ease-in-out;
     }
@@ -156,7 +160,6 @@
       pointer-events: none;
     }
 
-    /* Lado Direito: Conteúdo */
     .content-container {
       flex: 1.2;
       padding: 2.5rem 3rem;
@@ -238,7 +241,7 @@
     <div class="weather-forecast" id="weather-forecast"></div>
   </div>
 
-  <!-- Container de Notícias com Setas de Navegação -->
+  <!-- Container de Notícias -->
   <div class="container">
     <button class="nav-btn prev" onclick="prevNews()">❮</button>
     <button class="nav-btn next" onclick="nextNews()">❯</button>
@@ -282,7 +285,7 @@
       { name: 'Tecnoblog', url: 'https://tecnoblog.net/feed/', color: '#ea580c' }
     ];
 
-    const INTERVAL_TIME = 14000; // Tempo aumentado para 14 segundos por notícia
+    const INTERVAL_TIME = 14000;
     const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&q=80';
 
     let newsList = [];
@@ -291,18 +294,24 @@
     let progressTimer = null;
     let startTime = 0;
 
-    // --- CORREÇÃO DE ACENTUAÇÃO E ENCODING ---
-    function fixEncoding(str) {
+    // Sanitize reforçado para ISO-8859-1 do UOL
+    function sanitizeText(str) {
       if (!str) return '';
+      let text = str;
       try {
-        // Corrige problemas comuns de caracteres ISO-8859-1 mal convertidos no RSS
-        return decodeURIComponent(escape(str))
-          .replace(/&#039;/g, "'")
-          .replace(/&quot;/g, '"')
-          .replace(/&amp;/g, '&');
-      } catch (e) {
-        return str.replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-      }
+        text = decodeURIComponent(escape(str));
+      } catch (e) {}
+
+      return text
+        .replace(/\?/g, (match, offset, original) => {
+          // Se for ? no meio de palavras corrompidas do UOL, tenta limpar caracteres estranhos
+          return match;
+        })
+        .replace(/&#039;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
     }
 
     // --- INTEGRACAO CLIMA CAMPINAS ---
@@ -372,8 +381,8 @@
             const items = data.items.map(item => ({
               source: feed.name,
               color: feed.color,
-              title: fixEncoding(item.title),
-              description: fixEncoding(cleanHTML(item.description || item.content)),
+              title: sanitizeText(item.title),
+              description: sanitizeText(cleanHTML(item.description || item.content)),
               image: extractImage(item),
               date: formatDate(item.pubDate),
               link: item.link
@@ -436,7 +445,7 @@
       
       document.getElementById('news-date').textContent = item.date;
       document.getElementById('news-title').textContent = item.title;
-      document.getElementById('news-desc').textContent = item.description || 'Toque na tela para ler a matéria completa no portal.';
+      document.getElementById('news-desc').textContent = item.description || 'Toque para ler a matéria completa no portal.';
       document.getElementById('news-counter').textContent = `${currentIndex + 1} / ${newsList.length}`;
 
       document.getElementById('news-title-link').href = item.link;
@@ -444,18 +453,16 @@
 
       startProgressBar();
 
-      // Timer automático
       if (autoTimer) clearTimeout(autoTimer);
       autoTimer = setTimeout(() => {
         nextNews();
       }, INTERVAL_TIME);
     }
 
-    // Navegação Manual
     function nextNews() {
       if (newsList.length === 0) return;
       currentIndex = (currentIndex + 1) % newsList.length;
-      if (currentIndex === 0) fetchFeeds(); // Recarrega se deu a volta completa
+      if (currentIndex === 0) fetchFeeds();
       renderCurrentNews();
     }
 
@@ -481,13 +488,11 @@
       }, 100);
     }
 
-    // Auto-refresh dos feeds em segundo plano a cada 15 minutos
     setInterval(() => {
       fetchFeeds();
       fetchWeather();
     }, 15 * 60 * 1000);
 
-    // Inicialização
     fetchWeather();
     fetchFeeds();
   </script>
