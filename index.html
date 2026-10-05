@@ -28,11 +28,11 @@
       z-index: 10;
     }
 
-    /* Card de Previsão do Tempo (Topo Central) */
+    /* Card de Previsão do Tempo */
     .weather-card {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.95);
       border-bottom: 1px solid #1e293b;
-      padding: 0.6rem 1.5rem;
+      padding: 0.6rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -54,42 +54,81 @@
       font-size: 0.8rem;
       color: #94a3b8;
     }
+    /* Mais Espaçamento entre os dias */
     .weather-forecast {
       display: flex;
-      gap: 1.2rem;
+      gap: 2rem; 
     }
     .forecast-day {
       display: flex;
       flex-direction: column;
       align-items: center;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
+      padding: 0 0.4rem;
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    .forecast-day:last-child {
+      border-right: none;
     }
     .forecast-day .day-name {
       color: #cbd5e1;
-      font-weight: 600;
-      margin-bottom: 2px;
+      font-weight: 700;
+      margin-bottom: 3px;
     }
     .forecast-day .icon {
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       margin: 2px 0;
     }
-    .forecast-day .temp {
-      font-size: 0.75rem;
-      color: #94a3b8;
+    .forecast-day .temp-box {
+      display: flex;
+      gap: 6px;
+      font-size: 0.8rem;
+      margin-top: 2px;
     }
     .forecast-day .temp-max {
-      color: #f43f5e;
+      color: #fb7185;
       font-weight: 700;
+    }
+    .forecast-day .temp-min {
+      color: #94a3b8;
     }
 
     /* Container Principal das Notícias */
     .container {
       display: flex;
       flex: 1;
-      height: calc(100vh - 54px); /* Desconta barra de tempo e clima */
+      height: calc(100vh - 58px);
+      position: relative;
     }
+
+    /* Setas de Navegação Manual */
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(15, 23, 42, 0.6);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 1.8rem;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 20;
+      transition: background 0.2s, transform 0.2s;
+      backdrop-filter: blur(4px);
+    }
+    .nav-btn:hover {
+      background: rgba(56, 189, 248, 0.8);
+      transform: translateY(-50%) scale(1.1);
+    }
+    .nav-btn.prev { left: 15px; }
+    .nav-btn.next { right: 15px; }
     
-    /* Lado Esquerdo: Imagem com proporção reduzida */
+    /* Imagem sem esticar (contain + proporções originais preservadas) */
     .image-container {
       flex: 1;
       position: relative;
@@ -101,28 +140,26 @@
       text-decoration: none;
     }
     .image-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain; /* Mantém tamanho e resolução originais sem distorcer */
       opacity: 0;
-      transition: opacity 0.8s ease-in-out, transform 8s ease-out;
-      transform: scale(1);
+      transition: opacity 0.6s ease-in-out;
     }
     .image-container img.loaded {
       opacity: 1;
-      transform: scale(1.04);
     }
     .image-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(to right, rgba(11,15,25,0) 75%, rgba(11,15,25,1) 100%);
+      background: linear-gradient(to right, rgba(11,15,25,0) 80%, rgba(11,15,25,1) 100%);
       pointer-events: none;
     }
 
-    /* Lado Direito: Conteúdo e Resumo Expandido */
+    /* Lado Direito: Conteúdo */
     .content-container {
       flex: 1.2;
-      padding: 2.2rem 2.5rem;
+      padding: 2.5rem 3rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -133,10 +170,10 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 1rem;
+      margin-bottom: 1.2rem;
     }
     .badge {
-      padding: 5px 12px;
+      padding: 5px 14px;
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: 800;
@@ -155,21 +192,18 @@
       color: inherit;
       display: block;
     }
-    /* Título Sem Corte */
     .title {
       font-size: 1.85rem;
       font-weight: 800;
-      line-height: 1.25;
+      line-height: 1.28;
       color: #f1f5f9;
       letter-spacing: -0.4px;
-      margin-bottom: 1rem;
+      margin-bottom: 1.2rem;
     }
-    /* Resumo Expandido para ocupar o espaço */
     .description {
       font-size: 1.15rem;
       line-height: 1.6;
       color: #cbd5e1;
-      overflow: visible;
     }
     .footer {
       display: flex;
@@ -195,19 +229,20 @@
 
   <div id="progress-bar"></div>
 
-  <!-- Clima de Campinas (5 Dias) -->
+  <!-- Clima de Campinas -->
   <div class="weather-card">
     <div class="weather-header">
       <span class="weather-city">📍 Campinas, SP</span>
       <span class="weather-today" id="weather-today-desc">Carregando clima...</span>
     </div>
-    <div class="weather-forecast" id="weather-forecast">
-      <!-- Inserido dinamicamente pelo script -->
-    </div>
+    <div class="weather-forecast" id="weather-forecast"></div>
   </div>
 
-  <!-- Container de Notícias -->
+  <!-- Container de Notícias com Setas de Navegação -->
   <div class="container">
+    <button class="nav-btn prev" onclick="prevNews()">❮</button>
+    <button class="nav-btn next" onclick="nextNews()">❯</button>
+
     <a id="news-img-link" class="image-container" href="#" target="_blank">
       <img id="news-img" src="" alt="Capa da Notícia">
       <div class="image-overlay"></div>
@@ -229,7 +264,7 @@
 
       <div class="footer">
         <div class="click-hint">
-          <span>👆 Toque para abrir matéria</span>
+          <span>👆 Toque para abrir no portal</span>
         </div>
         <span id="news-counter">0 / 0</span>
       </div>
@@ -237,7 +272,6 @@
   </div>
 
   <script>
-    // Configuração dos Portais
     const FEEDS = [
       { name: 'G1 Campinas', url: 'https://g1.globo.com/rss/g1/sp/campinas-regiao/', color: '#0284c7' },
       { name: 'G1 Brasil', url: 'https://g1.globo.com/rss/g1/brasil/', color: '#0369a1' },
@@ -248,15 +282,30 @@
       { name: 'Tecnoblog', url: 'https://tecnoblog.net/feed/', color: '#ea580c' }
     ];
 
-    const INTERVAL_TIME = 9000;
+    const INTERVAL_TIME = 14000; // Tempo aumentado para 14 segundos por notícia
     const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&q=80';
 
     let newsList = [];
     let currentIndex = 0;
+    let autoTimer = null;
     let progressTimer = null;
     let startTime = 0;
 
-    // --- INTEGRACAO CLIMA CAMPINAS (Open-Meteo API) ---
+    // --- CORREÇÃO DE ACENTUAÇÃO E ENCODING ---
+    function fixEncoding(str) {
+      if (!str) return '';
+      try {
+        // Corrige problemas comuns de caracteres ISO-8859-1 mal convertidos no RSS
+        return decodeURIComponent(escape(str))
+          .replace(/&#039;/g, "'")
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, '&');
+      } catch (e) {
+        return str.replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+      }
+    }
+
+    // --- INTEGRACAO CLIMA CAMPINAS ---
     async function fetchWeather() {
       const lat = -22.9056;
       const lon = -47.0608;
@@ -292,14 +341,16 @@
           <div class="forecast-day">
             <span class="day-name">${dayName}</span>
             <span class="icon">${icon}</span>
-            <span class="temp"><span class="temp-max">${maxTemp}°</span> ${minTemp}°</span>
+            <div class="temp-box">
+              <span class="temp-max">${maxTemp}°</span>
+              <span class="temp-min">${minTemp}°</span>
+            </div>
           </div>
         `;
         forecastEl.innerHTML += dayHtml;
       }
     }
 
-    // Ícones Emoji Leves para iOS 12
     function getWeatherIcon(code) {
       if (code === 0) return '☀️';
       if (code >= 1 && code <= 3) return '⛅';
@@ -321,8 +372,8 @@
             const items = data.items.map(item => ({
               source: feed.name,
               color: feed.color,
-              title: item.title,
-              description: cleanHTML(item.description || item.content),
+              title: fixEncoding(item.title),
+              description: fixEncoding(cleanHTML(item.description || item.content)),
               image: extractImage(item),
               date: formatDate(item.pubDate),
               link: item.link
@@ -338,7 +389,7 @@
       
       if (newsList.length > 0) {
         currentIndex = 0;
-        showNextNews();
+        renderCurrentNews();
       }
     }
 
@@ -356,23 +407,17 @@
       return text.replace(/\s+/g, ' ').trim();
     }
 
-    // Parser de Data Resiliente para evitar "Invalid Date"
     function formatDate(dateStr) {
       if (!dateStr) return 'Agora';
-      
-      // Tratamento para datas do formato RSS/UOL/G1
       let timeStamp = Date.parse(dateStr.replace(/-/g, "/"));
-      if (isNaN(timeStamp)) {
-        timeStamp = Date.parse(dateStr);
-      }
-
+      if (isNaN(timeStamp)) timeStamp = Date.parse(dateStr);
       if (isNaN(timeStamp)) return 'Recente';
 
       const d = new Date(timeStamp);
       return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function showNextNews() {
+    function renderCurrentNews() {
       if (newsList.length === 0) return;
 
       const item = newsList[currentIndex];
@@ -384,7 +429,7 @@
         imgEl.src = item.image;
         imgEl.onload = () => imgEl.classList.add('loaded');
         imgEl.onerror = () => { imgEl.src = PLACEHOLDER_IMG; imgEl.classList.add('loaded'); };
-      }, 200);
+      }, 150);
 
       badgeEl.textContent = item.source;
       badgeEl.style.backgroundColor = item.color;
@@ -399,12 +444,25 @@
 
       startProgressBar();
 
-      currentIndex++;
-      if (currentIndex >= newsList.length) {
-        fetchFeeds();
-      } else {
-        setTimeout(showNextNews, INTERVAL_TIME);
-      }
+      // Timer automático
+      if (autoTimer) clearTimeout(autoTimer);
+      autoTimer = setTimeout(() => {
+        nextNews();
+      }, INTERVAL_TIME);
+    }
+
+    // Navegação Manual
+    function nextNews() {
+      if (newsList.length === 0) return;
+      currentIndex = (currentIndex + 1) % newsList.length;
+      if (currentIndex === 0) fetchFeeds(); // Recarrega se deu a volta completa
+      renderCurrentNews();
+    }
+
+    function prevNews() {
+      if (newsList.length === 0) return;
+      currentIndex = (currentIndex - 1 + newsList.length) % newsList.length;
+      renderCurrentNews();
     }
 
     function startProgressBar() {
@@ -422,6 +480,12 @@
         if (pct >= 100) clearInterval(progressTimer);
       }, 100);
     }
+
+    // Auto-refresh dos feeds em segundo plano a cada 15 minutos
+    setInterval(() => {
+      fetchFeeds();
+      fetchWeather();
+    }, 15 * 60 * 1000);
 
     // Inicialização
     fetchWeather();
