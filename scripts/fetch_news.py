@@ -162,6 +162,9 @@ def parse_feed(feed):
             "date": d.isoformat().replace("+00:00", "Z") if d else None,
         })
     now = datetime.now(timezone.utc)
+    for x in out:  # ESPN às vezes publica com horário no futuro
+        if x["date"] and parse_date(x["date"]) > now:
+            x["date"] = now.isoformat(timespec="seconds").replace("+00:00", "Z")
     out = [x for x in out if not x["date"] or now - parse_date(x["date"]) <= MAX_AGE]
     out.sort(key=lambda x: x["date"] or "", reverse=True)
     return out[:MAX_PER_FEED]

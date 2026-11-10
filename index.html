@@ -546,7 +546,9 @@ async function loadNews() {
       if (!d?.items?.length) continue;
       const age = Date.now() - Date.parse(d.generated);
       if (age > CFG.staleAfter && url !== CFG.data[CFG.data.length - 1]) { console.warn('dados antigos em', url); continue; }
-      return applyNews(d.items, d.generated, 'servidor');
+      applyNews(d.items, d.generated, 'servidor');
+      fillMissing(d.items, d.generated);   // fontes que o servidor não conseguiu (ex.: ESPN bloqueia o GitHub)
+      return;
     } catch (e) { console.warn('falhou', url, e.message); }
   }
   try {
@@ -560,9 +562,40 @@ async function loadNews() {
   setTimeout(loadNews, 60e3);
 }
 
-async function viaRss2json() {
+/* RSS direto pelo navegador: funciona para quem libera CORS (ESPN) */
+async function viaDirect(f) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 10000);
+  try {
+    const r = await fetch(f.url, { signal: ctl.signal, cache: 'no-cache' });
+    const xml = new DOMParser().parseFromString(await r.text(), 'text/xml');
+    const txt = (n, sel) => (n.getElementsByTagName(sel)[0]?.textContent || '').trim();
+    return [...xml.getElementsByTagName('item')].slice(0, 15).map(it => {
+      const html = txt(it, 'description');
+      const plain = new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+      const enc = it.getElementsByTagName('enclosure')[0];
+      const d = Date.parse(txt(it, 'pubDate').replace(/ (EST|EDT)$/, m => m === ' EST' ? ' -0500' : ' -0400'));
+      return { source: f.id, title: txt(it, 'title'), summary: plain === 'null' ? '' : plain.slice(0, 420), link: txt(it, 'link'),
+        image: enc?.getAttribute('url') || (html.match(/<img[^>]+src=['"]([^'"]+)/i) || [])[1] || null,
+        date: isNaN(d) ? null : new Date(Math.min(d, Date.now())).toISOString() };  // ESPN às vezes data no futuro
+    }).filter(x => x.title && x.link);
+  } finally { clearTimeout(t); }
+}
+
+async function fillMissing(items, gen) {
+  const have = new Set(items.map(x => x.source));
+  const missing = FEEDS.filter(f => !have.has(f.id));
+  if (!missing.length) return;
+  let extra = [];
+  for (const f of missing) {
+    try { extra = extra.concat(await viaDirect(f)); }
+    catch { try { extra = extra.concat(await viaRss2json([f])); } catch {} }
+  }
+  if (extra.length) applyNews(items.concat(extra), gen, 'servidor');
+}
+
+async function viaRss2json(list = FEEDS) {
   const out = [];
-  for (const f of FEEDS) {                     // em sequência e com pausa: o rss2json bloqueia rajadas
+  for (const f of list) {                     // em sequência e com pausa: o rss2json bloqueia rajadas
     try {
       const d = await fetchJSON('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(f.url));
       if (d.status === 'ok') for (const it of d.items) {
