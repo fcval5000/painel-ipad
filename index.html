@@ -1,500 +1,821 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  
-  <!-- Configurações de WebApp Tela Cheia para iOS / iPadOS -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Mídia Indoor">
-  
-  <title>Dashboard Mídia Indoor - Notícias & Clima</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: #0b0f19;
-      color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    /* Barra de Progresso Superior */
-    #progress-bar {
-      height: 4px;
-      background: linear-gradient(90deg, #38bdf8, #818cf8);
-      width: 0%;
-      transition: width 0.1s linear;
-      z-index: 10;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070B1F">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Notícias">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Painel de Notícias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ druris-neon (mesma paleta dos dashboards do Home Assistant) ============ */
+:root{
+  --amb:#FFB020; --azul:#38BDF8; --vio:#8B5CF6; --vio2:#A78BFA; --car:#FF3B5C; --menta:#34E3A4; --lav:#A5B4FC; --amar:#FACC15;
+  --txt:#F5F7FF; --txt2:#C7CBE8; --dim:#8A90C0;
+  --noite:#121840; --borda:#262D63; --fundo:#070B1F;
+  --card:rgba(18,24,64,.58); --card2:rgba(12,18,52,.82);
+  --r:1.35rem; --gap:1rem; --pad:1.25rem;
+  --accent:var(--azul);
+  --interval:14s;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  /* escala única: tudo em rem acompanha o tamanho da tela (iPad, TV, celular) */
+  font-size:clamp(14px, min(1.22vw, 2.05vh), 42px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--fundo);
+  color:var(--txt);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-feature-settings:"tnum" 1,"cv11" 1;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  overflow:hidden;
+  user-select:none; -webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:.18rem solid var(--azul);outline-offset:.18rem;border-radius:.6rem}
+svg{display:block}
 
-    /* Card de Previsão do Tempo */
-    .weather-card {
-      background: rgba(15, 23, 42, 0.95);
-      border-bottom: 1px solid #1e293b;
-      padding: 0.6rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      backdrop-filter: blur(10px);
-      z-index: 5;
-    }
-    .weather-header {
-      display: flex;
-      flex-direction: column;
-    }
-    .weather-city {
-      font-size: 0.95rem;
-      font-weight: 800;
-      color: #38bdf8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .weather-today {
-      font-size: 0.8rem;
-      color: #94a3b8;
-    }
-    .weather-forecast {
-      display: flex;
-      gap: 2rem; 
-    }
-    .forecast-day {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 0.85rem;
-      padding: 0 0.4rem;
-      border-right: 1px solid rgba(255,255,255,0.08);
-    }
-    .forecast-day:last-child {
-      border-right: none;
-    }
-    .forecast-day .day-name {
-      color: #cbd5e1;
-      font-weight: 700;
-      margin-bottom: 3px;
-    }
-    .forecast-day .icon {
-      font-size: 1.3rem;
-      margin: 2px 0;
-    }
-    .forecast-day .temp-box {
-      display: flex;
-      gap: 6px;
-      font-size: 0.8rem;
-      margin-top: 2px;
-    }
-    .forecast-day .temp-max {
-      color: #fb7185;
-      font-weight: 700;
-    }
-    .forecast-day .temp-min {
-      color: #94a3b8;
-    }
+/* ---------- fundo neon ---------- */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 8% -6%, rgba(99,102,241,.42), transparent 70%),
+    radial-gradient(ellipse 45% 50% at 106% 22%, rgba(34,211,238,.18), transparent 70%),
+    radial-gradient(ellipse 70% 45% at 55% 112%, rgba(139,92,246,.28), transparent 70%),
+    linear-gradient(180deg,#070B1F 0%,#0A0F2C 55%,#060818 100%);}
+.bg svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:46%;opacity:.75}
+.bg path{fill:none;filter:url(#strandGlow)}
 
-    /* Container Principal */
-    .container {
-      display: flex;
-      flex: 1;
-      height: calc(100vh - 58px);
-      position: relative;
-    }
+/* ---------- layout ---------- */
+.app{
+  height:100vh; height:100dvh;
+  padding:calc(var(--gap) + var(--safe-t)) calc(var(--gap) + var(--safe-r)) calc(var(--gap) + var(--safe-b)) calc(var(--gap) + var(--safe-l));
+  display:grid; gap:var(--gap);
+  grid-template-columns:minmax(0,1fr) 24rem;
+  grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"top side" "hero side";
+}
+.top{grid-area:top}
+.hero{grid-area:hero}
+.side{grid-area:side;display:flex;flex-direction:column;gap:var(--gap);min-height:0}
+.mhead{display:contents}
 
-    /* Setas de Navegação Manual */
-    .nav-btn {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(15, 23, 42, 0.6);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      font-size: 1.8rem;
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 20;
-      transition: background 0.2s, transform 0.2s;
-      backdrop-filter: blur(4px);
-    }
-    .nav-btn:hover {
-      background: rgba(56, 189, 248, 0.8);
-      transform: translateY(-50%) scale(1.1);
-    }
-    .nav-btn.prev { left: 15px; }
-    .nav-btn.next { right: 15px; }
-    
-    .image-container {
-      flex: 1;
-      position: relative;
-      background-color: #020617;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-    }
-    .image-container img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      opacity: 0;
-      transition: opacity 0.6s ease-in-out;
-    }
-    .image-container img.loaded {
-      opacity: 1;
-    }
-    .image-overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(to right, rgba(11,15,25,0) 80%, rgba(11,15,25,1) 100%);
-      pointer-events: none;
-    }
+.card{
+  background:var(--card);
+  border:.11rem solid var(--borda);
+  border-radius:var(--r);
+  backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 .6rem 2rem rgba(3,6,24,.45), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.label{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 
-    .content-container {
-      flex: 1.2;
-      padding: 2.5rem 3rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background: #0b0f19;
-      z-index: 2;
-    }
-    .meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 1.2rem;
-    }
-    .badge {
-      padding: 5px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    .date {
-      color: #64748b;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .news-link {
-      text-decoration: none;
-      color: inherit;
-      display: block;
-    }
-    .title {
-      font-size: 1.85rem;
-      font-weight: 800;
-      line-height: 1.28;
-      color: #f1f5f9;
-      letter-spacing: -0.4px;
-      margin-bottom: 1.2rem;
-    }
-    .description {
-      font-size: 1.15rem;
-      line-height: 1.6;
-      color: #cbd5e1;
-    }
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-top: 1px solid #1e293b;
-      padding-top: 1rem;
-      color: #475569;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-top: 1rem;
-    }
-    .click-hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #38bdf8;
-      font-size: 0.85rem;
-    }
-  </style>
+/* ---------- barra superior ---------- */
+.top{display:flex;align-items:center;gap:.8rem;min-width:0}
+.chips{display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding:.15rem}
+.chips::-webkit-scrollbar{display:none}
+.chips{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 2.5rem),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 2.5rem),transparent);padding-right:2.5rem}
+.chip{
+  --c:var(--azul);
+  flex:none;display:flex;align-items:center;gap:.45rem;
+  padding:.42rem .85rem;border-radius:99rem;
+  font-size:.82rem;font-weight:600;color:var(--txt2);
+  background:rgba(18,24,64,.55);border:.09rem solid var(--borda);
+  transition:background .2s,border-color .2s,color .2s,opacity .2s;
+}
+.chip i{width:.55rem;height:.55rem;border-radius:50%;background:var(--c);box-shadow:0 0 .5rem var(--c)}
+.chip[aria-pressed="true"]{color:var(--txt);border-color:color-mix(in srgb,var(--c) 55%,var(--borda));background:color-mix(in srgb,var(--c) 16%,rgba(18,24,64,.7))}
+.chip[aria-pressed="false"]{opacity:.5}
+.chip[aria-pressed="false"] i{box-shadow:none;background:var(--dim)}
+.status{flex:none;display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--dim);white-space:nowrap}
+.status .dot{width:.5rem;height:.5rem;border-radius:50%;background:var(--menta);box-shadow:0 0 .6rem var(--menta)}
+.status.warn .dot{background:var(--amb);box-shadow:0 0 .6rem var(--amb)}
+.status.err .dot{background:var(--car);box-shadow:0 0 .6rem var(--car)}
+
+/* ---------- relógio ---------- */
+.clock{padding:var(--pad) calc(var(--pad) + .2rem)}
+.clock .date{font-size:.85rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--azul)}
+.clock .time{font-size:4.6rem;font-weight:300;line-height:1;letter-spacing:-.04em;margin:.35rem 0 .3rem;font-variant-numeric:tabular-nums}
+.clock .time b{font-weight:300;animation:blink 2s steps(1) infinite}
+.clock .greet{font-size:1.15rem;font-weight:600;color:var(--txt)}
+@keyframes blink{50%{opacity:.25}}
+
+/* ---------- clima ---------- */
+.weather{padding:var(--pad)}
+.w-now{display:flex;align-items:center;gap:.6rem}
+.w-now .ico{width:5.2rem;height:5.2rem;flex:none;margin:-.6rem -.2rem -.6rem -.5rem}
+.w-now .t{font-size:3rem;font-weight:300;letter-spacing:-.03em;line-height:1}
+.w-now .t sup{font-size:.45em;vertical-align:.9em;color:var(--txt2);margin-left:.05em}
+.w-now .cond{font-size:.95rem;font-weight:600;color:var(--lav);margin-top:.3rem}
+.w-now .feel{font-size:.78rem;color:var(--dim);margin-top:.15rem}
+.w-now .city{margin-left:auto;align-self:flex-start;text-align:right}
+.w-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin:1rem 0 .9rem;padding:.65rem .4rem;border-radius:1rem;background:rgba(8,12,38,.5);border:.08rem solid rgba(38,45,99,.7)}
+.w-stats div{display:flex;flex-direction:column;align-items:center;gap:.2rem;font-size:.85rem;font-weight:600}
+.w-stats svg{width:1.1rem;height:1.1rem}
+.w-days{display:grid;grid-template-columns:repeat(5,1fr);gap:.2rem}
+.w-day{display:flex;flex-direction:column;align-items:center;gap:.1rem;font-size:.78rem}
+.w-day .n{font-weight:700;color:var(--txt2)}
+.w-day .ico{width:2.3rem;height:2.3rem}
+.w-day .mx{font-weight:700}
+.w-day .mn{color:var(--dim)}
+.w-day .pp{font-size:.66rem;color:var(--azul);min-height:1em}
+
+/* ---------- a seguir ---------- */
+.next{padding:var(--pad) .7rem .7rem;display:flex;flex-direction:column;min-height:0;flex:1}
+.next .label{padding:0 .55rem .55rem}
+.next-list{display:flex;flex-direction:column;gap:.35rem;overflow:hidden;min-height:0;flex:1}
+.ni{display:flex;gap:.7rem;align-items:center;padding:.45rem .55rem;border-radius:1rem;text-align:left;transition:background .2s;width:100%}
+.ni:hover{background:rgba(56,189,248,.08)}
+.ni .th{flex:none;width:4.4rem;height:3.1rem;border-radius:.7rem;overflow:hidden;background:var(--noite);position:relative}
+.ni .th img{width:100%;height:100%;object-fit:cover}
+.ni .tx{min-width:0;flex:1}
+.ni .s{display:flex;align-items:center;gap:.35rem;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c,var(--dim))}
+.ni .s span{color:var(--dim);font-weight:500;text-transform:none;letter-spacing:0}
+.ni .h{font-size:.86rem;font-weight:600;line-height:1.28;color:var(--txt);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:.12rem}
+
+/* ---------- destaque ---------- */
+.hero{position:relative;overflow:hidden;padding:0;isolation:isolate;min-height:0}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity .9s ease;display:block}
+.slide.on{opacity:1}
+.slide .blur{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;filter:blur(40px) saturate(150%) brightness(.55);transform:scale(1.1)}
+.slide .pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:60% 40%}
+.slide.on .pic{animation:kb calc(var(--interval) + 2s) ease-out forwards}
+.slide.contain .pic{object-fit:contain}
+@keyframes kb{from{transform:scale(1.0)}to{transform:scale(1.07)}}
+.slide .ph{position:absolute;inset:0;display:grid;place-items:center;
+  background:radial-gradient(circle at 30% 30%,color-mix(in srgb,var(--c) 45%,transparent),transparent 60%),radial-gradient(circle at 80% 80%,rgba(139,92,246,.35),transparent 55%),var(--noite)}
+.slide .ph span{font-size:5rem;font-weight:800;letter-spacing:-.04em;color:rgba(245,247,255,.12)}
+.slide .scrim{position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(7,11,31,.55) 0%,rgba(7,11,31,0) 20%,rgba(7,11,31,0) 30%,rgba(7,11,31,.6) 48%,rgba(7,11,31,.9) 66%,rgba(7,11,31,.97) 100%)}
+.slide .body{position:absolute;left:0;right:0;bottom:0;padding:2rem 2.2rem 2.4rem;max-width:62rem}
+.meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.9rem}
+.pill{display:inline-flex;align-items:center;gap:.45rem;padding:.36rem .85rem;border-radius:99rem;font-size:.8rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#0A0F2C;background:var(--c);box-shadow:0 0 1.2rem color-mix(in srgb,var(--c) 55%,transparent)}
+.meta .cat,.meta .ago{font-size:.85rem;font-weight:600;color:var(--txt2);text-shadow:0 1px .6rem rgba(0,0,0,.7)}
+.meta .ago::before{content:"•";margin-right:.6rem;color:var(--dim)}
+.slide h1{font-size:2.55rem;font-weight:800;line-height:1.12;letter-spacing:-.025em;text-wrap:balance;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 .1rem 1.5rem rgba(0,0,0,.45)}
+.slide p{font-size:1.15rem;line-height:1.5;color:var(--txt2);margin-top:.85rem;max-width:52rem;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+.hud{position:absolute;top:1.1rem;right:1.1rem;display:flex;gap:.5rem;z-index:3}
+.hud button{width:2.9rem;height:2.9rem;border-radius:50%;display:grid;place-items:center;
+  background:rgba(12,18,52,.55);border:.09rem solid rgba(165,180,252,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:background .2s,transform .15s}
+.hud button:hover{background:rgba(56,189,248,.35)}
+.hud button:active{transform:scale(.92)}
+.hud svg{width:1.3rem;height:1.3rem}
+.counter{position:absolute;top:1.1rem;left:1.2rem;z-index:3;font-size:.8rem;font-weight:700;color:var(--txt2);
+  padding:.4rem .75rem;border-radius:99rem;background:rgba(12,18,52,.55);border:.09rem solid rgba(165,180,252,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.counter .pz{display:none;color:var(--amb);margin-left:.4rem}
+.paused .counter .pz{display:inline}
+.prog{position:absolute;left:0;right:0;bottom:0;height:.28rem;background:rgba(255,255,255,.06);z-index:3}
+.prog i{display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 50%,#fff));box-shadow:0 0 .8rem var(--accent)}
+.prog i.run{animation:prog var(--interval) linear forwards}
+.paused .prog i{animation-play-state:paused}
+@keyframes prog{to{transform:scaleX(1)}}
+
+.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:2rem;color:var(--txt2)}
+.empty h2{font-size:1.6rem;font-weight:700;color:var(--txt);margin-bottom:.4rem}
+.spinner{width:3rem;height:3rem;margin:0 auto 1.2rem;border-radius:50%;border:.25rem solid rgba(165,180,252,.18);border-top-color:var(--azul);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- modo noturno (escurece a tela de madrugada) ---------- */
+.dim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 2s;z-index:50}
+body.night .dim{opacity:.6}
+
+/* ============ retrato (iPad/tablet em pé) ============ */
+@media (orientation:portrait) and (min-width:600px){
+  :root{font-size:clamp(14px, min(2.05vw, 1.55vh), 40px)}
+  .app{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-rows:auto auto minmax(0,1fr) auto;
+       grid-template-areas:"top top" "clock weather" "hero hero" "next next"}
+  .side{display:contents}
+  .clock{grid-area:clock;display:flex;flex-direction:column;justify-content:center}
+  .weather{grid-area:weather}
+  .next{grid-area:next;flex:none}
+  .next-list{flex-direction:row;gap:.6rem}
+  .next-list .ni{flex:1;min-width:0;flex-direction:column;align-items:stretch;padding:.4rem}
+  .next-list .ni .th{width:100%;height:auto;aspect-ratio:16/9}
+  .next-list .ni:nth-child(n+4){display:none}
+  .w-stats{margin:.8rem 0 .7rem}
+}
+
+/* ============ celular ============ */
+@media (max-width:599px){
+  :root{font-size:15px;--gap:.75rem;--pad:1rem;--r:1.25rem}
+  body{overflow:auto}
+  .app{height:auto;min-height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:none;
+       grid-template-areas:"top" "head" "hero" "next"}
+  .top{order:0}
+  .side{display:contents}
+  .mhead{grid-area:head;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:var(--gap)}
+  .clock{padding:1rem}
+  .clock .time{font-size:3.2rem}
+  .clock .greet{font-size:1rem}
+  .weather{padding:1rem}
+  .w-now .ico{width:3.8rem;height:3.8rem}
+  .w-now .t{font-size:2.3rem}
+  .w-now .city,.w-now .feel{display:none}
+  .w-stats{display:none}
+  .w-days{margin-top:.6rem}
+  .w-day .ico{width:1.9rem;height:1.9rem}
+  .w-day .pp{display:none}
+  .clock .date{font-size:.7rem}
+  .w-days{grid-template-columns:repeat(3,1fr)}
+  .w-day:nth-child(n+4){display:none}
+  .w-day{font-size:.72rem;white-space:nowrap}
+  .hero{height:auto;aspect-ratio:4/5;max-height:78dvh}
+  .slide .body{padding:1.2rem 1.2rem 1.5rem}
+  .slide h1{font-size:1.55rem;-webkit-line-clamp:5}
+  .slide p{font-size:.98rem;-webkit-line-clamp:3}
+  .hud{top:.8rem;right:.8rem}
+  .counter{top:.8rem;left:.8rem}
+  .next{flex:none}
+  .next-list{overflow:visible}
+  .ni .th{width:5.4rem;height:3.8rem}
+  .ni .h{font-size:.95rem;-webkit-line-clamp:3}
+  .status .txt{display:none}
+}
+@media (max-width:380px){
+  .mhead{grid-template-columns:1fr}
+}
+/* tela baixa em paisagem (celular deitado) */
+@media (orientation:landscape) and (max-height:500px){
+  :root{font-size:clamp(11px,1.6vh + .6vw,16px);--gap:.6rem;--pad:.9rem}
+  .app{grid-template-columns:minmax(0,1fr) 20rem}
+  .clock .time{font-size:3.2rem}
+  .w-stats,.w-days .pp{display:none}
+  .next{display:none}
+}
+@media (hover:none){ .ni:hover,.hud button:hover{background:inherit} }
+@media (prefers-reduced-motion:reduce){
+  .slide.on .pic{animation:none}
+  .clock .time b{animation:none}
+}
+</style>
 </head>
 <body>
+<!-- defs compartilhadas: ícones do tempo e brilho das linhas neon -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="cl" gradientUnits="userSpaceOnUse" x1="0" y1="34" x2="0" y2="92"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#B8C0F5"/></linearGradient>
+    <linearGradient id="cd" gradientUnits="userSpaceOnUse" x1="0" y1="34" x2="0" y2="92"><stop offset="0" stop-color="#D5D9F2"/><stop offset="1" stop-color="#7A82B8"/></linearGradient>
+    <radialGradient id="sun" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFE7A8"/><stop offset=".55" stop-color="#FFB020"/><stop offset="1" stop-color="#F08A00"/></radialGradient>
+    <linearGradient id="moon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EEF0FF"/><stop offset="1" stop-color="#A5B4FC"/></linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glowS" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#6366F1" flood-opacity=".55"/></filter>
+    <filter id="strandGlow" x="-5%" y="-50%" width="110%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+</svg>
 
-  <div id="progress-bar"></div>
+<div class="bg" aria-hidden="true">
+  <svg viewBox="0 0 1000 300" preserveAspectRatio="none" id="strands"></svg>
+</div>
 
-  <!-- Clima de Campinas -->
-  <div class="weather-card">
-    <div class="weather-header">
-      <span class="weather-city">📍 Campinas, SP</span>
-      <span class="weather-today" id="weather-today-desc">Carregando clima...</span>
+<main class="app" id="app">
+  <header class="top">
+    <nav class="chips" id="chips" aria-label="Fontes"></nav>
+    <div class="status" id="status" role="status"><span class="dot"></span><span class="txt">Carregando…</span></div>
+  </header>
+
+  <section class="card hero" id="hero" aria-live="polite">
+    <div class="empty" id="empty"><div><div class="spinner"></div><h2>Buscando as notícias</h2><div>g1, ge, ESPN, UOL, Canaltech, Tecnoblog…</div></div></div>
+    <div class="counter" id="counter" hidden><span id="cnt">0 / 0</span><span class="pz">⏸ pausado</span></div>
+    <div class="hud" id="hud" hidden>
+      <button id="btnPrev" aria-label="Notícia anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button id="btnPause" aria-label="Pausar"><svg viewBox="0 0 24 24" fill="currentColor" id="icoPause"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+      <button id="btnNext" aria-label="Próxima notícia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
-    <div class="weather-forecast" id="weather-forecast"></div>
-  </div>
+    <div class="prog"><i id="prog"></i></div>
+  </section>
 
-  <!-- Container de Notícias -->
-  <div class="container">
-    <button class="nav-btn prev" onclick="prevNews()">❮</button>
-    <button class="nav-btn next" onclick="nextNews()">❯</button>
+  <aside class="side">
+    <div class="mhead" id="mhead">
+      <section class="card clock">
+        <div class="date" id="date">—</div>
+        <div class="time" id="time">--<b>:</b>--</div>
+        <div class="greet" id="greet">Olá!</div>
+      </section>
 
-    <a id="news-img-link" class="image-container" href="#" target="_blank">
-      <img id="news-img" src="" alt="Capa da Notícia">
-      <div class="image-overlay"></div>
-    </a>
-
-    <div class="content-container">
-      <div>
-        <div class="meta">
-          <span id="news-source" class="badge">Fonte</span>
-          <span id="news-date" class="date">--:--</span>
-        </div>
-        
-        <a id="news-title-link" class="news-link" href="#" target="_blank">
-          <h1 id="news-title" class="title">Carregando seus canais...</h1>
-        </a>
-        
-        <p id="news-desc" class="description">Buscando as últimas notícias do G1 Campinas, ge, UOL, Tecnoblog e mais.</p>
-      </div>
-
-      <div class="footer">
-        <div class="click-hint">
-          <span>👆 Toque para abrir no portal</span>
-        </div>
-        <span id="news-counter">0 / 0</span>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const FEEDS = [
-      { name: 'G1 Campinas', url: 'https://g1.globo.com/rss/g1/sp/campinas-regiao/', color: '#0284c7' },
-      { name: 'G1 Brasil', url: 'https://g1.globo.com/rss/g1/brasil/', color: '#0369a1' },
-      { name: 'ge Esportes', url: 'https://ge.globo.com/rss/ge/', color: '#15803d' },
-      { name: 'ESPN Brasil', url: 'https://www.espn.com.br/espn/rss/news', color: '#b91c1c' },
-      { name: 'UOL Notícias', url: 'https://rss.uol.com.br/feed/noticias.xml', color: '#d97706' },
-      { name: 'Canaltech', url: 'https://canaltech.com.br/rss/', color: '#0d9488' },
-      { name: 'Tecnoblog', url: 'https://tecnoblog.net/feed/', color: '#ea580c' }
-    ];
-
-    const INTERVAL_TIME = 14000;
-    const PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&q=80';
-
-    let newsList = [];
-    let currentIndex = 0;
-    let autoTimer = null;
-    let progressTimer = null;
-    let startTime = 0;
-
-    // Sanitize reforçado para ISO-8859-1 do UOL
-    function sanitizeText(str) {
-      if (!str) return '';
-      let text = str;
-      try {
-        text = decodeURIComponent(escape(str));
-      } catch (e) {}
-
-      return text
-        .replace(/\?/g, (match, offset, original) => {
-          // Se for ? no meio de palavras corrompidas do UOL, tenta limpar caracteres estranhos
-          return match;
-        })
-        .replace(/&#039;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>');
-    }
-
-    // --- INTEGRACAO CLIMA CAMPINAS ---
-    async function fetchWeather() {
-      const lat = -22.9056;
-      const lon = -47.0608;
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&current_weather=true&timezone=America%2FSao_Paulo`;
-
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        renderWeather(data);
-      } catch (e) {
-        document.getElementById('weather-today-desc').textContent = 'Clima indisponível';
-      }
-    }
-
-    function renderWeather(data) {
-      const forecastEl = document.getElementById('weather-forecast');
-      forecastEl.innerHTML = '';
-
-      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const daily = data.daily;
-      
-      const currentTemp = Math.round(data.current_weather.temperature);
-      document.getElementById('weather-today-desc').textContent = `Agora: ${currentTemp}°C • Previsão 5 dias`;
-
-      for (let i = 0; i < 5; i++) {
-        const date = new Date(daily.time[i] + 'T00:00:00');
-        const dayName = i === 0 ? 'Hoje' : days[date.getDay()];
-        const maxTemp = Math.round(daily.temperature_2m_max[i]);
-        const minTemp = Math.round(daily.temperature_2m_min[i]);
-        const icon = getWeatherIcon(daily.weathercode[i]);
-
-        const dayHtml = `
-          <div class="forecast-day">
-            <span class="day-name">${dayName}</span>
-            <span class="icon">${icon}</span>
-            <div class="temp-box">
-              <span class="temp-max">${maxTemp}°</span>
-              <span class="temp-min">${minTemp}°</span>
-            </div>
+      <section class="card weather" id="weather">
+        <div class="w-now">
+          <div class="ico" id="wIco"></div>
+          <div>
+            <div class="t" id="wTemp">--<sup>°C</sup></div>
+            <div class="cond" id="wCond">Carregando clima…</div>
+            <div class="feel" id="wFeel"></div>
           </div>
-        `;
-        forecastEl.innerHTML += dayHtml;
+          <div class="city"><div class="label" id="wCity">Campinas</div></div>
+        </div>
+        <div class="w-stats" id="wStats"></div>
+        <div class="w-days" id="wDays"></div>
+      </section>
+    </div>
+
+    <section class="card next">
+      <div class="label">A seguir</div>
+      <div class="next-list" id="nextList"></div>
+    </section>
+  </aside>
+</main>
+<div class="dim" id="dim"></div>
+
+<script>
+'use strict';
+/* =================== configuração (pode ser alterada pela URL) ===================
+   ?intervalo=14        segundos por notícia
+   ?fontes=g1,ge        só essas fontes (ids de feeds.json)
+   ?lat=-22.9&lon=-47.06&cidade=Campinas
+   ?noturno=0           desliga o escurecimento entre 23h e 6h (ou ?noturno=22-7)
+   ?nome=Felipe         saudação personalizada
+*/
+const Q = new URLSearchParams(location.search);
+const CFG = {
+  interval: Math.max(5, +Q.get('intervalo') || 14) * 1000,
+  lat: +Q.get('lat') || -22.9056,
+  lon: +Q.get('lon') || -47.0608,
+  city: Q.get('cidade') || 'Campinas',
+  name: Q.get('nome') || '',
+  night: Q.get('noturno') === '0' ? null : (Q.get('noturno') || '23-6').split('-').map(Number),
+  data: [
+    Q.get('dados'),
+    'https://raw.githubusercontent.com/fcval5000/painel-ipad/data/news.json',
+    'news.json'
+  ].filter(Boolean),
+  newsEvery: 10 * 60e3,
+  weatherEvery: 20 * 60e3,
+  reloadEvery: 6 * 3600e3,      // recarrega a página de tempos em tempos (pega versões novas, evita vazamento em kiosk)
+  staleAfter: 90 * 60e3,        // dados mais velhos que isso => tenta o modo direto (rss2json)
+};
+document.documentElement.style.setProperty('--interval', CFG.interval / 1000 + 's');
+
+/* Fontes (espelho de feeds.json, usado como reserva se o arquivo não carregar) */
+let FEEDS = [
+  {id:'g1-campinas',name:'g1 Campinas',cat:'Região',color:'#FF3B5C',url:'https://g1.globo.com/rss/g1/sp/campinas-regiao/'},
+  {id:'g1',name:'g1',cat:'Brasil',color:'#FF6B81',url:'https://g1.globo.com/rss/g1/'},
+  {id:'ge',name:'ge',cat:'Esportes',color:'#34E3A4',url:'https://ge.globo.com/rss/ge/'},
+  {id:'espn',name:'ESPN',cat:'Esportes',color:'#FACC15',url:'https://www.espn.com.br/espn/rss/news'},
+  {id:'uol',name:'UOL',cat:'Notícias',color:'#FFB020',url:'https://rss.uol.com.br/feed/noticias.xml'},
+  {id:'canaltech',name:'Canaltech',cat:'Tecnologia',color:'#38BDF8',url:'https://canaltech.com.br/rss/'},
+  {id:'tecnoblog',name:'Tecnoblog',cat:'Tecnologia',color:'#A78BFA',url:'https://tecnoblog.net/feed/'},
+];
+
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('painel:' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('painel:' + k, JSON.stringify(v)); } catch {} },
+};
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+/* =================== ícones =================== */
+const cloud=(tx=0,ty=0,s=1,f='url(#cl)')=>`<g transform="translate(${tx} ${ty}) scale(${s})" filter="url(#soft)" fill="${f}"><circle cx="50" cy="72" r="20"/><circle cx="72" cy="60" r="26"/><circle cx="95" cy="76" r="16"/><rect x="50" y="70" width="45" height="22"/></g>`;
+const sun=(cx,cy,r)=>{let s='<g filter="url(#glow)">';for(let i=0;i<8;i++){const a=i*Math.PI/4,r1=r+7,r2=r+15;s+=`<line x1="${cx+r1*Math.cos(a)}" y1="${cy+r1*Math.sin(a)}" x2="${cx+r2*Math.cos(a)}" y2="${cy+r2*Math.sin(a)}" stroke="#FFB020" stroke-width="5" stroke-linecap="round"/>`}return s+`<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#sun)"/></g>`};
+const moon=(cx,cy,r)=>`<g filter="url(#glow)"><path d="M${cx+r*.35} ${cy-r} A${r} ${r} 0 1 0 ${cx+r} ${cy+r*.45} A${r*.8} ${r*.8} 0 0 1 ${cx+r*.35} ${cy-r}Z" fill="url(#moon)"/></g>`;
+const drops=(p,c='#38BDF8',w=5)=>`<g filter="url(#glowS)" stroke="${c}" stroke-width="${w}" stroke-linecap="round">`+p.map(([x,y,l=12])=>`<line x1="${x}" y1="${y}" x2="${x-l*.4}" y2="${y+l}"/>`).join('')+'</g>';
+const bolt=(x,y,s=1)=>`<g filter="url(#glow)" transform="translate(${x} ${y}) scale(${s})"><path d="M10 0 L-6 22 H6 L-2 42 L18 14 H6 L14 0Z" fill="#FFB020" stroke="#FFE7A8" stroke-width="1.5" stroke-linejoin="round"/></g>`;
+const flakes=(p)=>'<g filter="url(#glowS)" fill="#FFFFFF">'+p.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4"/>`).join('')+'</g>';
+const fogl=(ys)=>'<g filter="url(#glowS)" stroke="#A5B4FC" stroke-width="6" stroke-linecap="round">'+ys.map(([a,b,y])=>`<line x1="${a}" y1="${y}" x2="${b}" y2="${y}"/>`).join('')+'</g>';
+const W_ICONS={
+  'sunny':sun(64,64,22),
+  'clear-night':moon(60,62,30)+'<g fill="#FFFFFF" filter="url(#glowS)"><circle cx="96" cy="34" r="2.5"/><circle cx="104" cy="58" r="1.8"/><circle cx="86" cy="96" r="2"/></g>',
+  'partlycloudy':sun(48,46,17)+cloud(10,14,.9),
+  'partlycloudy-night':moon(46,44,22)+cloud(10,14,.9),
+  'cloudy':cloud(16,6,.78,'url(#cd)')+cloud(-4,8,.95),
+  'fog':cloud(-2,-8,.95)+fogl([[30,98,98],[22,90,110]]),
+  'rainy':cloud(-2,-14,.95)+drops([[50,88],[70,88],[90,88]]),
+  'pouring':cloud(-2,-18,.95,'url(#cd)')+drops([[42,82,14],[58,82,18],[74,82,14],[90,82,18],[50,104,10],[82,104,10]]),
+  'lightning-rainy':cloud(-2,-18,.95,'url(#cd)')+bolt(60,72,.85)+drops([[44,86],[96,86]]),
+  'snowy':cloud(-2,-14,.95)+flakes([[48,94],[66,102],[84,94],[56,114],[78,114]]),
+  'snowy-rainy':cloud(-2,-14,.95)+flakes([[50,96],[82,110]])+drops([[70,88],[96,92]]),
+  'hail':cloud(-2,-14,.95,'url(#cd)')+'<g filter="url(#glowS)" fill="#C7D2FE" stroke="#38BDF8" stroke-width="2"><circle cx="50" cy="96" r="5"/><circle cx="70" cy="108" r="5"/><circle cx="90" cy="96" r="5"/></g>',
+};
+const wIcon = (k) => `<svg viewBox="0 0 128 128" width="100%" height="100%" aria-hidden="true">${W_ICONS[k] || W_ICONS.cloudy}</svg>`;
+const UI = {
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="#FF3B5C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  hum:'<svg viewBox="0 0 24 24" fill="#38BDF8"><path d="M12 2.7s-6.5 7.3-6.5 11.8a6.5 6.5 0 0013 0C18.5 10 12 2.7 12 2.7z"/></svg>',
+  wind:'<svg viewBox="0 0 24 24" fill="none" stroke="#A5B4FC" stroke-width="2.2" stroke-linecap="round"><path d="M3 8h11a3 3 0 10-3-3M3 12h16a3 3 0 11-3 3M3 16h8"/></svg>',
+  rain:'<svg viewBox="0 0 24 24" fill="none" stroke="#34E3A4" stroke-width="2.2" stroke-linecap="round"><path d="M7 15a4.5 4.5 0 01-.5-9A6 6 0 0118 8a3.5 3.5 0 01-.5 7"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/></svg>',
+  play:'<path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/>',
+  pause:'<rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/>',
+};
+
+/* =================== fundo: linhas neon =================== */
+(function strands() {
+  const svg = $('strands');
+  const cols = [['#6366F1', 2, .55], ['#22D3EE', 1.5, .45], ['#8B5CF6', 1.8, .5], ['#38BDF8', 1.1, .35]];
+  svg.innerHTML = cols.map(([c, w, a], k) => {
+    const ph = [0, .7, 1.5, 2.4][k]; let d = '';
+    for (let i = 0; i <= 120; i++) {
+      const t = i / 120, x = -20 + t * 1060;
+      const y = 300 * (.62 + .22 * Math.sin(t * Math.PI * 1.3 + ph) - .42 * t * t) + 26 * Math.sin(t * 7 + ph * 2);
+      d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    return `<path d="${d}" stroke="${c}" stroke-width="${w}" opacity="${a}" vector-effect="non-scaling-stroke"/>`;
+  }).join('');
+})();
+
+/* =================== relógio =================== */
+const DIAS = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function tickClock() {
+  const d = new Date(), h = d.getHours(), m = d.getMinutes();
+  $('time').innerHTML = `${String(h).padStart(2,'0')}<b>:</b>${String(m).padStart(2,'0')}`;
+  $('date').textContent = `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
+  const g = h < 5 ? 'Boa noite' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  $('greet').textContent = CFG.name ? `${g}, ${CFG.name}.` : `${g}!`;
+  nightCheck(h);
+}
+function scheduleClock() { tickClock(); setTimeout(scheduleClock, 60000 - (Date.now() % 60000) + 50); }
+
+/* =================== modo noturno =================== */
+let nightOverride = 0;
+function nightCheck(h = new Date().getHours()) {
+  if (!CFG.night) return;
+  const [a, b] = CFG.night;
+  const isNight = a > b ? (h >= a || h < b) : (h >= a && h < b);
+  document.body.classList.toggle('night', isNight && Date.now() > nightOverride);
+}
+
+/* =================== clima (Open-Meteo, sem chave) =================== */
+const COND = {
+  'sunny':'Ensolarado','clear-night':'Céu limpo','partlycloudy':'Parcialmente nublado','partlycloudy-night':'Parcialmente nublado',
+  'cloudy':'Nublado','fog':'Neblina','rainy':'Chuva','pouring':'Chuva forte','lightning-rainy':'Tempestade',
+  'snowy':'Neve','snowy-rainy':'Neve e chuva','hail':'Granizo'
+};
+function wmo(code, day = true) {
+  if (code === 0) return day ? 'sunny' : 'clear-night';
+  if (code === 1 || code === 2) return day ? 'partlycloudy' : 'partlycloudy-night';
+  if (code === 3) return 'cloudy';
+  if (code === 45 || code === 48) return 'fog';
+  if ([65, 82].includes(code)) return 'pouring';
+  if ((code >= 51 && code <= 63) || code === 80 || code === 81) return 'rainy';
+  if (code === 66 || code === 67) return 'snowy-rainy';
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snowy';
+  if (code === 95) return 'lightning-rainy';
+  if (code === 96 || code === 99) return 'hail';
+  return 'cloudy';
+}
+const COND_WMO = {1:'Predomínio de sol',2:'Parcialmente nublado',3:'Nublado',51:'Garoa',53:'Garoa',55:'Garoa forte',61:'Chuva fraca',63:'Chuva',80:'Pancadas de chuva',81:'Pancadas de chuva'};
+const dirName = (deg) => ['N','NE','L','SE','S','SO','O','NO'][Math.round(deg / 45) % 8];
+
+async function loadWeather() {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${CFG.lat}&longitude=${CFG.lon}`
+    + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,is_day'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+    + '&timezone=America%2FSao_Paulo&forecast_days=6';
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    store.set('weather', data);
+    renderWeather(data);
+  } catch (e) {
+    const cached = store.get('weather');
+    if (cached) renderWeather(cached, true);
+    else $('wCond').textContent = 'Clima indisponível';
+  }
+}
+
+function renderWeather(d, stale = false) {
+  const c = d.current, dl = d.daily;
+  const key = wmo(c.weather_code, !!c.is_day);
+  $('wIco').innerHTML = wIcon(key);
+  $('wTemp').innerHTML = `${Math.round(c.temperature_2m)}<sup>°C</sup>`;
+  $('wCond').textContent = (COND_WMO[c.weather_code] || COND[key]) + (stale ? ' ·' : '');
+  $('wFeel').textContent = `Sensação ${Math.round(c.apparent_temperature)}°`;
+  $('wCity').textContent = CFG.city;
+  const stat = (ico, v, t) => `<div title="${t}">${ico}<span>${v}</span></div>`;
+  $('wStats').innerHTML =
+    stat(UI.up, Math.round(dl.temperature_2m_max[0]) + '°', 'Máxima') +
+    stat(UI.down, Math.round(dl.temperature_2m_min[0]) + '°', 'Mínima') +
+    stat(UI.hum, Math.round(c.relative_humidity_2m) + '%', 'Umidade') +
+    stat(UI.wind, `${Math.round(c.wind_speed_10m)}<small style="font-weight:500;color:var(--dim)"> km/h ${dirName(c.wind_direction_10m)}</small>`, 'Vento');
+  const days = $('wDays'); days.innerHTML = '';
+  const short = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  for (let i = 1; i <= 5 && i < dl.time.length; i++) {
+    const dt = new Date(dl.time[i] + 'T12:00:00');
+    const pp = dl.precipitation_probability_max?.[i];
+    days.insertAdjacentHTML('beforeend', `<div class="w-day">
+      <span class="n">${i === 1 ? 'Amanhã' : short[dt.getDay()]}</span>
+      <span class="ico">${wIcon(wmo(dl.weather_code[i]))}</span>
+      <span><span class="mx">${Math.round(dl.temperature_2m_max[i])}°</span> <span class="mn">${Math.round(dl.temperature_2m_min[i])}°</span></span>
+      <span class="pp">${pp >= 20 ? '💧' + pp + '%' : ''}</span></div>`);
+  }
+}
+
+/* =================== notícias =================== */
+let all = [];              // todas as notícias carregadas
+let queue = [];            // ordem de exibição (após filtro)
+let idx = 0;
+let timer = null, paused = false, generated = null, lastOk = 0, source = '';
+let enabled = new Set(Q.get('fontes') ? Q.get('fontes').split(',') : store.get('fontes', null) || FEEDS.map(f => f.id));
+const feedOf = (id) => FEEDS.find(f => f.id === id) || { id, name: id, color: '#A5B4FC', cat: '' };
+
+async function fetchJSON(url, ms = 12000) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(url, { cache: 'no-cache', signal: ctl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+async function loadFeedsConfig() {
+  try { const f = await fetchJSON('feeds.json', 6000); if (Array.isArray(f) && f.length) FEEDS = f; } catch {}
+  if (!Q.get('fontes') && !store.get('fontes', null)) enabled = new Set(FEEDS.map(f => f.id));
+  renderChips();
+}
+
+/* 1) news.json gerado pelo GitHub Actions  2) reserva: rss2json direto do navegador */
+async function loadNews() {
+  for (const url of CFG.data) {
+    try {
+      const d = await fetchJSON(url);
+      if (!d?.items?.length) continue;
+      const age = Date.now() - Date.parse(d.generated);
+      if (age > CFG.staleAfter && url !== CFG.data[CFG.data.length - 1]) { console.warn('dados antigos em', url); continue; }
+      return applyNews(d.items, d.generated, 'servidor');
+    } catch (e) { console.warn('falhou', url, e.message); }
+  }
+  try {
+    const items = await viaRss2json();
+    if (items.length) return applyNews(items, new Date().toISOString(), 'direto');
+  } catch (e) { console.warn('rss2json', e); }
+  const cached = store.get('news');
+  if (cached?.items?.length) return applyNews(cached.items, cached.generated, 'cache');
+  setStatus('err', 'Sem conexão com as fontes');
+  if (!all.length) $('empty').innerHTML = '<div><h2>Não foi possível carregar</h2><div>Vou tentar de novo em instantes.</div></div>';
+  setTimeout(loadNews, 60e3);
+}
+
+async function viaRss2json() {
+  const out = [];
+  for (const f of FEEDS) {                     // em sequência e com pausa: o rss2json bloqueia rajadas
+    try {
+      const d = await fetchJSON('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(f.url));
+      if (d.status === 'ok') for (const it of d.items) {
+        const html = it.description || it.content || '';
+        const img = it.thumbnail || it.enclosure?.link || (html.match(/<img[^>]+src=['"]([^'"]+)/i) || [])[1] || null;
+        const tmp = new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+        out.push({ source: f.id, title: it.title, summary: tmp === 'null' ? '' : tmp.slice(0, 420), link: it.link,
+          image: img, date: it.pubDate ? new Date(it.pubDate.replace(' ', 'T') + 'Z').toISOString() : null });
       }
-    }
+    } catch {}
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  return out;
+}
 
-    function getWeatherIcon(code) {
-      if (code === 0) return '☀️';
-      if (code >= 1 && code <= 3) return '⛅';
-      if (code >= 45 && code <= 48) return '🌫️';
-      if (code >= 51 && code <= 67) return '🌧️';
-      if (code >= 80 && code <= 82) return '🌦️';
-      if (code >= 95) return '⛈️';
-      return '☀️';
-    }
+function applyNews(items, gen, how) {
+  const current = queue[idx]?.link;
+  all = items.filter(x => x.title && x.link);
+  generated = gen; source = how; lastOk = Date.now();
+  if (how !== 'cache') store.set('news', { items: all, generated: gen });
+  buildQueue(current);
+  updateStatus();
+}
 
-    // --- GERENCIAMENTO DE FEEDS ---
-    async function fetchFeeds() {
-      let allItems = [];
-      for (const feed of FEEDS) {
-        try {
-          const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`);
-          const data = await res.json();
-          if (data.status === 'ok') {
-            const items = data.items.map(item => ({
-              source: feed.name,
-              color: feed.color,
-              title: sanitizeText(item.title),
-              description: sanitizeText(cleanHTML(item.description || item.content)),
-              image: extractImage(item),
-              date: formatDate(item.pubDate),
-              link: item.link
-            }));
-            allItems = allItems.concat(items);
-          }
-        } catch (e) {
-          console.error('Erro ao carregar feed:', feed.name, e);
-        }
-      }
+/* intercala as fontes (a mais recente de cada uma primeiro), sem repetir a mesma fonte em sequência */
+function buildQueue(keepLink) {
+  const by = {};
+  for (const x of all) if (enabled.has(x.source)) (by[x.source] ||= []).push(x);
+  Object.values(by).forEach(l => l.sort((a, b) => (b.date || '').localeCompare(a.date || '')));
+  const order = Object.keys(by).sort((a, b) => (by[b][0].date || '').localeCompare(by[a][0].date || ''));
+  queue = [];
+  for (let i = 0; order.some(s => by[s][i]); i++) for (const s of order) if (by[s][i]) queue.push(by[s][i]);
+  const k = keepLink ? queue.findIndex(x => x.link === keepLink) : -1;
+  idx = k >= 0 ? k : 0;
+  if (!queue.length) { showEmpty('Nenhuma fonte selecionada', 'Toque nas fontes acima para ativar.'); return; }
+  if (k < 0) show(idx, true); else { $('cnt').textContent = `${idx + 1} / ${queue.length}`; renderNext(); }
+}
 
-      newsList = allItems.sort(() => Math.random() - 0.5);
-      
-      if (newsList.length > 0) {
-        currentIndex = 0;
-        renderCurrentNews();
-      }
-    }
+function showEmpty(t, s) {
+  clearTimeout(timer);
+  $('hero').querySelectorAll('.slide').forEach(n => n.remove());
+  $('empty').hidden = false;
+  $('empty').innerHTML = `<div><h2>${t}</h2><div>${s}</div></div>`;
+  $('hud').hidden = $('counter').hidden = true;
+  $('nextList').innerHTML = '';
+}
 
-    function extractImage(item) {
-      if (item.thumbnail && item.thumbnail.startsWith('http')) return item.thumbnail;
-      if (item.enclosure && item.enclosure.link) return item.enclosure.link;
-      
-      const imgMatch = (item.description || item.content || '').match(/<img[^>]+src="([^">]+)"/);
-      return imgMatch ? imgMatch[1] : PLACEHOLDER_IMG;
-    }
+function ago(iso) {
+  if (!iso) return '';
+  const t = Date.parse(iso), m = Math.round((Date.now() - t) / 60000);
+  if (m < 1) return 'agora';
+  if (m < 60) return `há ${m} min`;
+  const h = Math.round(m / 60);
+  if (h < 24 && new Date(t).getDate() === new Date().getDate()) return `há ${h} h`;
+  const d = new Date(t);
+  const hm = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return `ontem, ${hm}`;
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ', ' + hm;
+}
 
-    function cleanHTML(html) {
-      const doc = new DOMParser().parseFromString(html || '', 'text/html');
-      let text = doc.body.textContent || "";
-      return text.replace(/\s+/g, ' ').trim();
-    }
+function makeSlide(item) {
+  const f = feedOf(item.source);
+  const a = el('a', 'slide');
+  a.href = item.link; a.target = '_blank'; a.rel = 'noopener';
+  a.style.setProperty('--c', f.color);
+  const ph = el('div', 'ph'); ph.append(el('span', '', f.name)); a.append(ph);
+  if (item.image) {
+    const blur = el('img', 'blur'); blur.alt = ''; blur.decoding = 'async';
+    const pic = el('img', 'pic'); pic.alt = ''; pic.decoding = 'async';
+    pic.onload = () => {
+      // fotos muito estreitas/altas (ou miniaturas) ficam inteiras sobre o fundo desfocado
+      const r = pic.naturalWidth / pic.naturalHeight, box = a.clientWidth / Math.max(1, a.clientHeight);
+      if (pic.naturalWidth < 500 || r < box * .55 || r > box * 1.9) a.classList.add('contain');
+      ph.remove();
+    };
+    pic.onerror = () => { pic.remove(); blur.remove(); };
+    blur.onerror = () => blur.remove();
+    pic.src = blur.src = item.image;
+    a.append(blur, pic);
+  }
+  a.append(el('div', 'scrim'));
+  const body = el('div', 'body');
+  const meta = el('div', 'meta');
+  const pill = el('span', 'pill', f.name);
+  meta.append(pill);
+  if (f.cat) meta.append(el('span', 'cat', f.cat));
+  const ag = el('span', 'ago', ago(item.date)); ag.dataset.date = item.date || '';
+  if (item.date) meta.append(ag);
+  body.append(meta, el('h1', '', item.title));
+  if (item.summary) body.append(el('p', '', item.summary));
+  a.append(body);
+  return a;
+}
 
-    function formatDate(dateStr) {
-      if (!dateStr) return 'Agora';
-      let timeStamp = Date.parse(dateStr.replace(/-/g, "/"));
-      if (isNaN(timeStamp)) timeStamp = Date.parse(dateStr);
-      if (isNaN(timeStamp)) return 'Recente';
+function show(i, instant = false) {
+  if (!queue.length) return;
+  idx = (i + queue.length) % queue.length;
+  const item = queue[idx], hero = $('hero');
+  $('empty').hidden = true;
+  $('hud').hidden = $('counter').hidden = false;
+  const old = [...hero.querySelectorAll('.slide')];
+  const s = makeSlide(item);
+  hero.insertBefore(s, $('counter'));
+  requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('on')));
+  old.forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), instant ? 0 : 1000); });
+  document.documentElement.style.setProperty('--accent', feedOf(item.source).color);
+  $('cnt').textContent = `${idx + 1} / ${queue.length}`;
+  renderNext();
+  preload(queue[(idx + 1) % queue.length]);
+  restartTimer();
+}
 
-      const d = new Date(timeStamp);
-      return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    }
+function preload(item) { if (item?.image) { const im = new Image(); im.src = item.image; } }
 
-    function renderCurrentNews() {
-      if (newsList.length === 0) return;
+function renderNext() {
+  const list = $('nextList'); list.innerHTML = '';
+  const n = Math.min(8, queue.length - 1);
+  for (let k = 1; k <= n; k++) {
+    const j = (idx + k) % queue.length, it = queue[j], f = feedOf(it.source);
+    const b = el('button', 'ni'); b.style.setProperty('--c', f.color);
+    b.onclick = () => show(j);
+    const th = el('div', 'th');
+    if (it.image) { const im = el('img'); im.alt = ''; im.loading = 'lazy'; im.src = it.image; im.onerror = () => im.remove(); th.append(im); }
+    else th.style.background = `linear-gradient(135deg, ${f.color}55, #121840)`;
+    const tx = el('div', 'tx'); const s = el('div', 's', f.name);
+    if (it.date) s.append(el('span', '', '· ' + ago(it.date)));
+    tx.append(s, el('div', 'h', it.title));
+    b.append(th, tx); list.append(b);
+  }
+  fitNext();
+}
+/* mostra só os itens que cabem inteiros no cartão "A seguir" */
+function fitNext() {
+  const list = $('nextList');
+  if (getComputedStyle(list).flexDirection !== 'column' || matchMedia('(max-width:599px)').matches) {
+    [...list.children].forEach(c => c.style.display = ''); return;
+  }
+  [...list.children].forEach(c => { c.style.display = ''; });
+  const bottom = list.getBoundingClientRect().bottom + 1;
+  [...list.children].forEach(c => { if (c.getBoundingClientRect().bottom > bottom) c.style.display = 'none'; });
+}
 
-      const item = newsList[currentIndex];
-      const imgEl = document.getElementById('news-img');
-      const badgeEl = document.getElementById('news-source');
+function restartTimer() {
+  clearTimeout(timer);
+  const p = $('prog'); p.classList.remove('run'); void p.offsetWidth; p.classList.add('run');
+  if (!paused) timer = setTimeout(() => show(idx + 1), CFG.interval);
+}
+function setPaused(v) {
+  paused = v;
+  $('hero').classList.toggle('paused', v);
+  $('icoPause').innerHTML = v ? UI.play : UI.pause;
+  $('btnPause').setAttribute('aria-label', v ? 'Continuar' : 'Pausar');
+  if (v) { clearTimeout(timer); timer = null; }
+  else restartTimer();
+}
 
-      imgEl.classList.remove('loaded');
-      setTimeout(() => {
-        imgEl.src = item.image;
-        imgEl.onload = () => imgEl.classList.add('loaded');
-        imgEl.onerror = () => { imgEl.src = PLACEHOLDER_IMG; imgEl.classList.add('loaded'); };
-      }, 150);
+/* =================== fontes (chips) =================== */
+function renderChips() {
+  const box = $('chips'); box.innerHTML = '';
+  for (const f of FEEDS) {
+    const b = el('button', 'chip'); b.style.setProperty('--c', f.color);
+    b.setAttribute('aria-pressed', enabled.has(f.id));
+    b.append(el('i'), document.createTextNode(f.name));
+    b.onclick = () => {
+      enabled.has(f.id) ? enabled.delete(f.id) : enabled.add(f.id);
+      b.setAttribute('aria-pressed', enabled.has(f.id));
+      store.set('fontes', [...enabled]);
+      buildQueue(queue[idx]?.link);
+      updateStatus();
+    };
+    box.append(b);
+  }
+}
 
-      badgeEl.textContent = item.source;
-      badgeEl.style.backgroundColor = item.color;
-      
-      document.getElementById('news-date').textContent = item.date;
-      document.getElementById('news-title').textContent = item.title;
-      document.getElementById('news-desc').textContent = item.description || 'Toque para ler a matéria completa no portal.';
-      document.getElementById('news-counter').textContent = `${currentIndex + 1} / ${newsList.length}`;
+/* =================== status =================== */
+function setStatus(kind, text) { const s = $('status'); s.className = 'status ' + (kind || ''); s.querySelector('.txt').textContent = text; }
+function updateStatus() {
+  if (!generated) return;
+  const age = Date.now() - Date.parse(generated);
+  const how = source === 'cache' ? ' (offline)' : '';
+  const n = queue.length;
+  setStatus(!navigator.onLine || source === 'cache' ? 'err' : age > CFG.staleAfter ? 'warn' : '',
+    `${n} notícias · atualizado ${ago(generated)}${how}`);
+  document.querySelectorAll('.slide .ago').forEach(a => a.dataset.date && (a.textContent = ago(a.dataset.date)));
+}
 
-      document.getElementById('news-title-link').href = item.link;
-      document.getElementById('news-img-link').href = item.link;
+/* =================== interação: toque, deslize, teclado/controle remoto =================== */
+$('btnPrev').onclick = (e) => { e.preventDefault(); show(idx - 1); };
+$('btnNext').onclick = (e) => { e.preventDefault(); show(idx + 1); };
+$('btnPause').onclick = (e) => { e.preventDefault(); setPaused(!paused); };
 
-      startProgressBar();
+let sx = null, sy = 0, swiped = false;
+$('hero').addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; swiped = false; });
+$('hero').addEventListener('pointerup', e => {
+  if (sx == null) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) { swiped = true; show(idx + (dx < 0 ? 1 : -1)); }
+  sx = null;
+});
+$('hero').addEventListener('click', e => { if (swiped) { e.preventDefault(); swiped = false; } }, true);
 
-      if (autoTimer) clearTimeout(autoTimer);
-      autoTimer = setTimeout(() => {
-        nextNews();
-      }, INTERVAL_TIME);
-    }
+document.addEventListener('keydown', e => {
+  const k = e.key;
+  if (k === 'ArrowRight' || k === 'PageDown' || k === 'MediaTrackNext') { show(idx + 1); e.preventDefault(); }
+  else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'MediaTrackPrevious') { show(idx - 1); e.preventDefault(); }
+  else if (k === ' ' || k === 'MediaPlayPause' || k === 'p') { setPaused(!paused); e.preventDefault(); }
+  else if ((k === 'Enter') && document.activeElement === document.body && queue[idx]) { window.open(queue[idx].link, '_blank', 'noopener'); }
+});
 
-    function nextNews() {
-      if (newsList.length === 0) return;
-      currentIndex = (currentIndex + 1) % newsList.length;
-      if (currentIndex === 0) fetchFeeds();
-      renderCurrentNews();
-    }
+/* toque na tela escura (madrugada) acende por 10 min */
+document.addEventListener('pointerdown', () => {
+  if (document.body.classList.contains('night')) { nightOverride = Date.now() + 10 * 60e3; nightCheck(); }
+  requestWakeLock();
+}, true);
 
-    function prevNews() {
-      if (newsList.length === 0) return;
-      currentIndex = (currentIndex - 1 + newsList.length) % newsList.length;
-      renderCurrentNews();
-    }
+/* =================== tela sempre ligada (Wake Lock) =================== */
+let wakeLock = null;
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator) || wakeLock || document.visibilityState !== 'visible') return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } catch {}
+}
 
-    function startProgressBar() {
-      const bar = document.getElementById('progress-bar');
-      bar.style.width = '0%';
-      startTime = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    requestWakeLock();
+    if (Date.now() - lastOk > CFG.newsEvery) loadNews();
+    if (!paused) restartTimer();
+  } else { clearTimeout(timer); }
+});
+addEventListener('online', () => { loadNews(); loadWeather(); });
+addEventListener('offline', updateStatus);
+/* o cartão "A seguir" muda de altura quando o clima carrega ou a tela gira: reajusta */
+let rz; const refit = () => { clearTimeout(rz); rz = setTimeout(fitNext, 120); };
+addEventListener('resize', refit);
+if ('ResizeObserver' in window) new ResizeObserver(refit).observe($('nextList'));
 
-      if (progressTimer) clearInterval(progressTimer);
-
-      progressTimer = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const pct = Math.min((elapsed / INTERVAL_TIME) * 100, 100);
-        bar.style.width = pct + '%';
-
-        if (pct >= 100) clearInterval(progressTimer);
-      }, 100);
-    }
-
-    setInterval(() => {
-      fetchFeeds();
-      fetchWeather();
-    }, 15 * 60 * 1000);
-
-    fetchWeather();
-    fetchFeeds();
-  </script>
+/* =================== início =================== */
+(async function start() {
+  scheduleClock();
+  document.fonts?.ready.then(fitNext);
+  const cw = store.get('weather'); if (cw) try { renderWeather(cw, true); } catch {}
+  renderChips();
+  const cn = store.get('news'); if (cn?.items?.length) applyNews(cn.items, cn.generated, 'cache');
+  loadWeather();
+  await loadFeedsConfig();
+  await loadNews();
+  requestWakeLock();
+  setInterval(loadNews, CFG.newsEvery);
+  setInterval(loadWeather, CFG.weatherEvery);
+  setInterval(updateStatus, 60e3);
+  setTimeout(() => { if (navigator.onLine) location.reload(); }, CFG.reloadEvery);
+})();
+</script>
 </body>
 </html>

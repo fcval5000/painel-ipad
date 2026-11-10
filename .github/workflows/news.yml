@@ -1,0 +1,43 @@
+name: Atualizar notícias
+
+# Coleta os feeds e publica news.json no branch "data" (sem histórico: cada execução
+# substitui o commit anterior, então o main não fica poluído).
+# A página lê: https://raw.githubusercontent.com/<dono>/<repo>/data/news.json
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # o GitHub pode atrasar alguns minutos em horários de pico
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [feeds.json, scripts/fetch_news.py, .github/workflows/news.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reaproveitar imagens da última execução
+        run: curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/data/news.json" -o news.json || true
+
+      - name: Coletar feeds
+        run: python3 scripts/fetch_news.py news.json
+
+      - name: Publicar no branch data
+        run: |
+          mkdir -p /tmp/out && cp news.json /tmp/out/
+          cd /tmp/out
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add news.json
+          git commit -qm "news.json $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data

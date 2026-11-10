@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B2160"/><stop offset="1" stop-color="#070B1F"/></linearGradient>
+    <linearGradient id="ln" gradientUnits="userSpaceOnUse" x1="48" y1="0" x2="132" y2="0"><stop offset="0" stop-color="#38BDF8"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
+    <filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="url(#bg)"/>
+  <rect x="34" y="42" width="112" height="96" rx="18" fill="none" stroke="#262D63" stroke-width="6"/>
+  <rect x="48" y="56" width="44" height="34" rx="8" fill="#FFB020" filter="url(#g)"/>
+  <g stroke-linecap="round" stroke-width="8" filter="url(#g)">
+    <line x1="104" y1="62" x2="132" y2="62" stroke="#F5F7FF"/>
+    <line x1="104" y1="82" x2="124" y2="82" stroke="#A5B4FC"/>
+    <line x1="48" y1="110" x2="132" y2="110" stroke="url(#ln)"/>
+  </g>
+</svg>

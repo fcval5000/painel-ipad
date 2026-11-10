@@ -1,0 +1,9 @@
+[
+  { "id": "g1-campinas", "name": "g1 Campinas", "cat": "Região",      "color": "#FF3B5C", "url": "https://g1.globo.com/rss/g1/sp/campinas-regiao/" },
+  { "id": "g1",          "name": "g1",          "cat": "Brasil",      "color": "#FF6B81", "url": "https://g1.globo.com/rss/g1/" },
+  { "id": "ge",          "name": "ge",          "cat": "Esportes",    "color": "#34E3A4", "url": "https://ge.globo.com/rss/ge/" },
+  { "id": "espn",        "name": "ESPN",        "cat": "Esportes",    "color": "#FACC15", "url": "https://www.espn.com.br/espn/rss/news" },
+  { "id": "uol",         "name": "UOL",         "cat": "Notícias",    "color": "#FFB020", "url": "https://rss.uol.com.br/feed/noticias.xml" },
+  { "id": "canaltech",   "name": "Canaltech",   "cat": "Tecnologia",  "color": "#38BDF8", "url": "https://canaltech.com.br/rss/" },
+  { "id": "tecnoblog",   "name": "Tecnoblog",   "cat": "Tecnologia",  "color": "#A78BFA", "url": "https://tecnoblog.net/feed/" }
+]
